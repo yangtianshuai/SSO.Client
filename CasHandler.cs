@@ -149,7 +149,7 @@ namespace SSO.Client
                         var param = CasParameter.SERVICE + "=" + service
                             + "&" + CasParameter.TICKET + "=" + ticket + "&" + CasParameter.LOGOUT + "=" + HttpUtility.UrlEncode(logoutUrl);
 
-                        url = $"{_options.GetBaseURL(_request.RequestHost, true)}/{CasAPI.VALIDATE}?" + param;
+                        url = $"{_options.GetBaseURL(_request.RequestHost, true)}/{CasAPI.VALIDATE}";
                         //可以通过Header设置Service的参数？
                         var response = await client.GetAsync(url);
 
@@ -185,10 +185,7 @@ namespace SSO.Client
 
         public void Validate(bool cache_flag)
         {
-            Task.Run(async () =>
-            {
-                await this.ValidateAsync(cache_flag);
-            }).GetAwaiter().GetResult();            
+            this.ValidateAsync(cache_flag).GetAwaiter().GetResult();
         }
 
         public CasOptions GetOptions()

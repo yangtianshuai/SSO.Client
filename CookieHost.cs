@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace SSO.Client
@@ -6,12 +7,18 @@ namespace SSO.Client
     internal class CookieHost
     {
         private static ConcurrentDictionary<string, CasCookie> _cookies { get; set; }
+        public int expires { get; set; } = 60 * 5;
 
         public CookieHost()
         {
             _cookies = new ConcurrentDictionary<string, CasCookie>();
         }
-      
+
+        public CookieHost(int expires):this()
+        {
+            this.expires = expires;
+        }
+
         public CasCookie this[string st]
         {
             get
@@ -26,14 +33,14 @@ namespace SSO.Client
 
         public CasCookie GetCookie(string ticket)
         {
-            var list = new List<string>(_cookies.Keys);
-            foreach (var item in list)
+            var keys = new List<string>(_cookies.Keys);
+            foreach (var key in keys)
             {
-                var cookie = _cookies[item];
+                var cookie = _cookies[key];
                 if (cookie != null)
-                {
+                {                    
                     if (cookie.ID == ticket)
-                    {
+                    {                        
                         return cookie;
                     }
                 }
@@ -52,6 +59,15 @@ namespace SSO.Client
             {
                 return false;
             }
+            if (_cookies.ContainsKey(st))
+            {
+                var cookie = _cookies[st];
+                if (cookie.Time.AddSeconds(expires) < DateTime.Now)
+                {
+                    _cookies.TryRemove(st, out cookie);
+                    return false;
+                }
+            }            
             return _cookies.ContainsKey(st);
         }
         /// <summary>

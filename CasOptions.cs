@@ -48,6 +48,18 @@ namespace SSO.Client
         /// Cookie内部管理器
         /// </summary>
         internal CookieHost Cookie { get; set; } = new CookieHost();
+
+        public int Expires
+        {
+            get
+            {
+                return Cookie.expires;
+            }
+            set
+            {                
+                Cookie.expires = value;
+            }
+        }
         /// <summary>
         /// 应用ID
         /// </summary>

@@ -26,6 +26,7 @@ namespace SSO.Client
 
         public bool Exist(string token)
         {
+            //需要定时检测token有效性
             return _options.Cookie.Contain(token);
         }
 
@@ -73,31 +74,7 @@ namespace SSO.Client
                 {
                     url = $"{url}&{CasParameter.AccessToken}={_request.Query[CasParameter.AccessToken]}";
                 }
-                using (var client = new HttpClient())
-                {
-                    //SSH权限
-                    if (_request.Scheme.ToLower() == "https")
-                    {
-                        ServicePointManager.ServerCertificateValidationCallback += (se, cert, chain, sslerror) => { return true; };
-                    }
-                    var response = await client.GetAsync(url);
-
-                    if (response != null)
-                    {
-                        var body = await response.Content.ReadAsStringAsync();
-                        var res = JsonConvert.DeserializeObject<JObject>(body);
-                        if (res["data"] != null)
-                        {
-                            var cookie = new CasCookie();
-                            cookie.ID = res["data"]["ticket"].ToString();
-                            cookie.UserID = res["data"]["id"].ToString();
-                            //添加Cookie
-                            _options.Cookie.Set(cookie.ID, cookie);
-                            _request.CallBack.Validate(cookie);
-                        }
-                    }
-
-                }
+                await ValidateRequest(url);
                 _request.CallBack.Redirect(url);
             }
             else if (!_request.Query.ContainsKey(CasParameter.TICKET))
@@ -129,49 +106,22 @@ namespace SSO.Client
                 if (cache_flag && Exist(ticket))
                 {
                     _request.CallBack.Validate(_options.Cookie.GetCookie(ticket));
-                    Thread.Sleep(3000);
+                    //Thread.Sleep(3000);
                 }
                 else
                 {
-                    using (var client = new HttpClient())
+                    var logoutUrl = _request.RequestHost;
+                    if (_options.LogoutPath.Length > 0 && _options.LogoutPath[0] != '/')
                     {
-                        //SSH权限
-                        if (_request.Scheme.ToLower() == "https")
-                        {
-                            ServicePointManager.ServerCertificateValidationCallback += (se, cert, chain, sslerror) => { return true; };
-                        }
-                        var logoutUrl = _request.RequestHost;
-                        if (_options.LogoutPath.Length > 0 && _options.LogoutPath[0] != '/')
-                        {
-                            logoutUrl += '/';
-                        }
-                        logoutUrl += _options.LogoutPath;
-                        var param = CasParameter.SERVICE + "=" + service
-                            + "&" + CasParameter.TICKET + "=" + ticket + "&" + CasParameter.LOGOUT + "=" + HttpUtility.UrlEncode(logoutUrl);
-
-                        url = $"{_options.GetBaseURL(_request.RequestHost, true)}/{CasAPI.VALIDATE}";
-                        //可以通过Header设置Service的参数？
-                        var response = await client.GetAsync(url);
-
-                        if (response != null)
-                        {
-                            var body = await response.Content.ReadAsStringAsync();
-                            if (_request.CallBack.Validate != null)
-                            {
-                                var res = JsonConvert.DeserializeObject<JObject>(body);
-                                if (res["data"] != null)
-                                {
-                                    var cookie = new CasCookie();
-                                    cookie.ID = ticket;
-                                    cookie.UserID = res["data"].ToString();
-                                    //添加Cookie
-                                    _options.Cookie.Set(cookie.ID, cookie);
-                                    _request.CallBack.Validate(cookie);
-                                }
-                            }
-                        }
-
+                        logoutUrl += '/';
                     }
+                    logoutUrl += _options.LogoutPath;
+                    var param = CasParameter.SERVICE + "=" + service
+                        + "&" + CasParameter.TICKET + "=" + ticket + "&" + CasParameter.LOGOUT + "=" + HttpUtility.UrlEncode(logoutUrl);
+
+                    url = $"{_options.GetBaseURL(_request.RequestHost, true)}/{CasAPI.VALIDATE}?" + param;
+
+                    await ValidateRequest(url, ticket);
                 }
 
                 url = _request.GetURL();
@@ -180,6 +130,48 @@ namespace SSO.Client
                     url = url.Replace(CasParameter.TICKET + "=" + _request.Query[CasParameter.TICKET], "").TrimEnd('&').TrimEnd('?');
                 }
                 _request.CallBack.Redirect(url);
+            }
+        }
+
+        private async Task ValidateRequest(string url, string ticket = null)
+        {
+            using (var client = new HttpClient())
+            {
+                //SSH权限
+                if (_request.Scheme.ToLower() == "https")
+                {
+                    ServicePointManager.ServerCertificateValidationCallback += (se, cert, chain, sslerror) => { return true; };
+                }
+                //可以通过Header设置Service的参数？
+                var response = await client.GetAsync(url);
+
+                if (response != null)
+                {
+                    var body = await response.Content.ReadAsStringAsync();
+                    if (_request.CallBack.Validate != null)
+                    {
+                        var res = JsonConvert.DeserializeObject<JObject>(body);
+                        if (res["data"] != null)
+                        {
+                            var cookie = new CasCookie();
+                            if(!string.IsNullOrEmpty(ticket))
+                            {
+                                cookie.ID = ticket;
+                                cookie.UserID = res["data"].ToString();
+                            }
+                            else
+                            {
+                                cookie.ID = res["data"]["ticket"].ToString();
+                                cookie.UserID = res["data"]["id"].ToString();
+                            }                          
+                           
+                            //添加Cookie
+                            _options.Cookie.Set(cookie.ID, cookie);
+                            _request.CallBack.Validate(cookie);
+                        }
+                    }
+                }
+
             }
         }
 

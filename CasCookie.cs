@@ -7,7 +7,13 @@ namespace SSO.Client
     /// </summary>
     public class CasCookie
     {
+        public CasCookie()
+        {
+            Time = DateTime.Now;
+        }
+
         public static string Token = "CasToken";
+        public DateTime Time { get; set; }
         /// <summary>
         /// Cookie
         /// </summary>

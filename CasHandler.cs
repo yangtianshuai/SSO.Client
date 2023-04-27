@@ -105,8 +105,8 @@ namespace SSO.Client
                 string url = "";
                 if (cache_flag && Exist(ticket))
                 {
-                    _request.CallBack.Validate(_options.Cookie.GetCookie(ticket));
-                    //Thread.Sleep(3000);
+                    Thread.Sleep(3000);
+                    _request.CallBack.Validate(_options.Cookie.GetCookie(ticket));                    
                 }
                 else
                 {

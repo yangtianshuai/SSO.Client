@@ -6,12 +6,12 @@ namespace SSO.Client
 {
     internal class CookieHost
     {
-        private static ConcurrentDictionary<string, CasCookie> _cookies { get; set; }
-        public int expires { get; set; } = 60 * 5;
+        private static ConcurrentDictionary<string, SsoCookie> _cookies { get; set; }
+        public int expires { get; set; } = 60 * 30;
 
         public CookieHost()
         {
-            _cookies = new ConcurrentDictionary<string, CasCookie>();
+            _cookies = new ConcurrentDictionary<string, SsoCookie>();
         }
 
         public CookieHost(int expires):this()
@@ -19,7 +19,7 @@ namespace SSO.Client
             this.expires = expires;
         }
 
-        public CasCookie this[string st]
+        public SsoCookie this[string st]
         {
             get
             {
@@ -31,7 +31,7 @@ namespace SSO.Client
             }
         }
 
-        public CasCookie GetCookie(string ticket)
+        public SsoCookie GetCookie(string ticket)
         {
             var keys = new List<string>(_cookies.Keys);
             foreach (var key in keys)
@@ -67,7 +67,7 @@ namespace SSO.Client
                     _cookies.TryRemove(st, out cookie);
                     return false;
                 }
-            }            
+            }
             return _cookies.ContainsKey(st);
         }
         /// <summary>
@@ -78,7 +78,7 @@ namespace SSO.Client
         {
             if (Contain(st))
             {
-                CasCookie value = null;
+                SsoCookie value = null;
                 _cookies.TryRemove(st,out value);
             }
         }
@@ -87,12 +87,14 @@ namespace SSO.Client
         /// </summary>
         /// <param name="st"></param>
         /// <param name="user"></param>
-        public void Set(string st, CasCookie cookie)
+        public void Set(string st, SsoCookie cookie)
         {
             if (!Contain(st))
             {
                 _cookies.TryAdd(st, cookie);
             }
         }
+
+
     }
 }

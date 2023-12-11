@@ -1,6 +1,6 @@
 ﻿namespace SSO.Client.CAS
 {
-    internal class CasParameter : SsoParameter
+    public class CasParameter : SsoParameter
     {
         /// <summary>
         /// Service参数名

@@ -22,6 +22,9 @@
         /// redirect_uri
         /// </summary>
         public static string RedirectUri { get; internal set; } = "redirect_uri";
-        
+        /// <summary>
+        /// redirect
+        /// </summary>
+        public static string Redirect { get; internal set; } = "redirect";
     }
 }

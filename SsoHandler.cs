@@ -32,10 +32,10 @@ namespace SSO.Client
             return path.ToLower() == _options.LogoutPath.ToLower();
         }
 
-        public void Logout(string token = null)
+        public void Logout(string token,bool redirect_flag)
         {
             SsoCookie cookie = null;
-            if (_request.Query.ContainsKey(SsoParameter.TICKET))
+            if (string.IsNullOrEmpty(token) && _request.Query.ContainsKey(SsoParameter.TICKET))
             {
                 token = _request.Query[SsoParameter.TICKET];
                 cookie = _options.Cookie.GetCookie(token);
@@ -47,10 +47,17 @@ namespace SSO.Client
             //子系统退出
             _request.CallBack.Logout?.Invoke(cookie);
             _options.Cookie.Remove(token);
+
+            //认证服务通知时，不需要跳转
+            if (!redirect_flag)
+            {
+                return;
+            }
+
             var url = $"{_options.GetBaseURL(_request.RequestHost)}/{SsoApi.LOGOUT}" +
-                     $"?{SsoParameter.AppID}={_options.AppID}" +
-                     $"&{SsoParameter.TICKET}={token}" +
-                     $"&{SsoParameter.RedirectUri}={HttpUtility.UrlEncode(_request.GetURL())}";
+                 $"?{SsoParameter.AppID}={_options.AppID}" +
+                 $"&{SsoParameter.TICKET}={token}" +
+                 $"&{SsoParameter.RedirectUri}={HttpUtility.UrlEncode(_request.GetURL())}";
             _request.CallBack.Redirect?.Invoke(url);
         }
 

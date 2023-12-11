@@ -1,6 +1,6 @@
 ﻿namespace SSO.Client.OAuth2
 {
-    internal class OAuth2Parameter : SsoParameter
+    public class OAuth2Parameter : SsoParameter
     {
         public static string ResponseType { get; internal set; } = "response_type";
         public static string State { get; internal set; } = "state";

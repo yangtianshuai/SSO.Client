@@ -27,10 +27,10 @@ namespace SSO.Client.CAS
                     url = $"{url}&{CasParameter.AccessToken}={_request.Query[CasParameter.AccessToken]}";
                 }
 
-                _request.CallBack.Redirect?.Invoke(url);
+                _request.CallBack.Redirect?.Invoke(url, true);
             }
             else if (!_request.Query.ContainsKey(CasParameter.TICKET))
-            {
+            {               
                 string url = _options.GetBaseURL(_request.RequestHost);
                 if (_options.LoginURL != null && _options.LoginURL.Length > 0)
                 {
@@ -45,11 +45,11 @@ namespace SSO.Client.CAS
                 {
                     url = $"{url}&{CasParameter.AppID}={_options.AppID}";
                 }
-                _request.CallBack.Redirect?.Invoke(url);
+                _request.CallBack.Redirect?.Invoke(url, true);
             }
             else
             {
-                string ticket = _request.Query[CasParameter.TICKET];
+                string ticket = _request.Query[CasParameter.TICKET][0];
                 var service = HttpUtility.UrlEncode(_request.GetURL());
                 string url = "";
                 if (cache_flag && Exist(ticket))
@@ -70,15 +70,20 @@ namespace SSO.Client.CAS
 
                     url = $"{_options.GetBaseURL(_request.RequestHost, true)}/{CasApi.VALIDATE}?" + param;
 
-                    await HttpRequestAsync(url, ticket);
+                    if(!await HttpRequestAsync(url, ticket))
+                    {
+
+                    }
                 }
 
                 url = _request.GetURL();
                 if (_request.Query.ContainsKey(CasParameter.TICKET))
                 {
-                    url = url.Replace(CasParameter.TICKET + "=" + _request.Query[CasParameter.TICKET], "").TrimEnd('&').TrimEnd('?');
+                    var param = CasParameter.TICKET + "=" + _request.Query[CasParameter.TICKET][0];
+                    url = url.Replace(param, "");
+                    url = url.TrimEnd('&').TrimEnd('?');
                 }
-                _request.CallBack.Redirect?.Invoke(url);
+                _request.CallBack.Redirect?.Invoke(url, false);
             }
         }
 

@@ -67,8 +67,9 @@ namespace SSO.Client
                     _cookies.TryRemove(st, out cookie);
                     return false;
                 }
+                return true;
             }
-            return _cookies.ContainsKey(st);
+            return false;
         }
         /// <summary>
         /// 移除Cookie

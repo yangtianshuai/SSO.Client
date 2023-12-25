@@ -6,7 +6,7 @@ namespace SSO.Client
     {
         public SsoRequest()
         {
-            Query = new Dictionary<string, string>();
+            Query = new Dictionary<string, List<string>>();
             Cookie = new Dictionary<string, string>();
             CallBack = new SsoCallback();
         }
@@ -20,7 +20,7 @@ namespace SSO.Client
         public string Path { get; set; }
         public string ClientIP { get; set; }
 
-        public Dictionary<string, string> Query { get; set; }
+        public Dictionary<string, List<string>> Query { get; set; }
         public Dictionary<string, string> Cookie { get; set; }
         /// <summary>
         /// Body

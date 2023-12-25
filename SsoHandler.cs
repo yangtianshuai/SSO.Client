@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ namespace SSO.Client
     public abstract class SsoHandler : ISsoHandler
     {
         protected SsoRequest _request;
-        protected SsoOptions _options;
+        protected SsoOptions _options;        
 
         public void SetRequest(SsoRequest request)
         {
@@ -37,7 +38,7 @@ namespace SSO.Client
             SsoCookie cookie = null;
             if (string.IsNullOrEmpty(token) && _request.Query.ContainsKey(SsoParameter.TICKET))
             {
-                token = _request.Query[SsoParameter.TICKET];
+                token = _request.Query[SsoParameter.TICKET][0];
                 cookie = _options.Cookie.GetCookie(token);
             }
             else
@@ -58,7 +59,7 @@ namespace SSO.Client
                  $"?{SsoParameter.AppID}={_options.AppID}" +
                  $"&{SsoParameter.TICKET}={token}" +
                  $"&{SsoParameter.RedirectUri}={HttpUtility.UrlEncode(_request.GetURL())}";
-            _request.CallBack.Redirect?.Invoke(url);
+            _request.CallBack.Redirect?.Invoke(url, false);
         }
 
         public void Validate(bool cache_flag)
@@ -66,7 +67,7 @@ namespace SSO.Client
             this.ValidateAsync(cache_flag).GetAwaiter().GetResult();
         }
 
-        protected async Task HttpRequestAsync(string url, string ticket = null)
+        protected async Task<bool> HttpRequestAsync(string url, string ticket = null)
         {
             try
             {
@@ -111,9 +112,11 @@ namespace SSO.Client
                         //添加Cookie
                         _options.Cookie.Set(cookie.ID, cookie);
                         _request.CallBack.Validate?.Invoke(cookie);
+                        return true;
                     }
                 }
             }
+            return false;
         }
 
         public abstract Task ValidateAsync(bool cache_flag);
@@ -122,7 +125,7 @@ namespace SSO.Client
         {
             if (string.IsNullOrEmpty(token) && _request.Query.ContainsKey(SsoParameter.TICKET))
             {
-                token = _request.Query[SsoParameter.TICKET];
+                token = _request.Query[SsoParameter.TICKET][0];
             }
             //需要定时检测token有效性
             return _options.Cookie.Contain(token);

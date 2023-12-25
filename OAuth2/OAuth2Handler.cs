@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ namespace SSO.Client.OAuth2
     public abstract class OAuth2Handler : SsoHandler
     {
         protected OAuth2Options _options2;
+
         public OAuth2Handler(SsoOptions options, OAuth2Options options2)
         {
             _options = options;
@@ -30,7 +32,7 @@ namespace SSO.Client.OAuth2
                 if (_options2.Mode == OAuth2Mode.Simple)
                 {
                     //简单模式，返回：access_token、state、expires_in、scope
-                    ticket = _request.Query[OAuth2Parameter.AccessToken];                    
+                    ticket = _request.Query[OAuth2Parameter.AccessToken][0];
                 }
                 else
                 {
@@ -62,7 +64,8 @@ namespace SSO.Client.OAuth2
                 }
 
                 //跳转原页面 
-                url = _request.Query[OAuth2Parameter.Scope];                
+                url = _request.Query[OAuth2Parameter.Scope][0];
+                _request.CallBack.Redirect?.Invoke(url, false);
             }
             else
             {
@@ -85,11 +88,13 @@ namespace SSO.Client.OAuth2
                         + "&" + OAuth2Parameter.Scope + "=" + HttpUtility.UrlEncode(_request.GetURL());
 
                 url = $"{url}?{param}";
-            }
-            _request.CallBack.Redirect?.Invoke(url);
+
+                _request.CallBack.Redirect?.Invoke(url, true);
+
+            }            
         }
 
-        public async Task<string> AccessTokenAsync()
+        private async Task<string> AccessTokenAsync()
         {
             var code = _request.Query[OAuth2Parameter.Code];
             var grant_type = "authorization_code";

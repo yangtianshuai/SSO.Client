@@ -7,7 +7,7 @@ namespace SSO.Client
         /// <summary>
         /// 跳转回调
         /// </summary>
-        public Action<string,bool> Redirect { get; set; }        
+        public Action<string, bool, SsoMode> Redirect { get; set; }
         /// <summary>
         /// 验证回调
         /// </summary>

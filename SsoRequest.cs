@@ -6,19 +6,34 @@ namespace SSO.Client
     {
         public SsoRequest()
         {
+            OriginQuery = new Dictionary<string, List<string>>();
             Query = new Dictionary<string, List<string>>();
             Cookie = new Dictionary<string, string>();
             CallBack = new SsoCallback();
         }
-        public string Scheme { get; set; }
+
+        public string Ticket { get; set; }
+
         /// <summary>
-        /// 内部Request
+        /// 原始Scheme
         /// </summary>
-        public string RequestHost { get; set; }
+        public string OriginScheme { get; set; }
+        /// <summary>
+        /// 原始Request
+        /// </summary>
+        public string OriginHost { get; set; }
+        /// <summary>
+        /// 原始Path
+        /// </summary>
+        public string OriginPath { get; set; }
+        public string Scheme { get; set; }
+
         public string Host { get; set; }
         public int Port { get; set; }
         public string Path { get; set; }
         public string ClientIP { get; set; }
+
+        public Dictionary<string, List<string>> OriginQuery { get; set; }
 
         public Dictionary<string, List<string>> Query { get; set; }
         public Dictionary<string, string> Cookie { get; set; }

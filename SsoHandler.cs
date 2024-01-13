@@ -45,9 +45,10 @@ namespace SSO.Client
             {
                 cookie = _options.Cookie[token];
             }
-            //子系统退出
-            _request.CallBack.Logout?.Invoke(cookie);
+
             _options.Cookie.Remove(token);
+            //子系统退出
+            _request.CallBack.Logout?.Invoke(cookie);            
 
             //认证服务通知时，不需要跳转
             if (!redirect_flag)
@@ -55,11 +56,11 @@ namespace SSO.Client
                 return;
             }
 
-            var url = $"{_options.GetBaseURL(_request.RequestHost)}/{SsoApi.LOGOUT}" +
+            var url = $"{_options.GetBaseURL(_request.OriginHost)}/{SsoApi.LOGOUT}" +
                  $"?{SsoParameter.AppID}={_options.AppID}" +
                  $"&{SsoParameter.TICKET}={token}" +
                  $"&{SsoParameter.RedirectUri}={HttpUtility.UrlEncode(_request.GetURL())}";
-            _request.CallBack.Redirect?.Invoke(url, false);
+            _request.CallBack.Redirect?.Invoke(url, false, _options.Mode);
         }
 
         public void Validate(bool cache_flag)
@@ -117,6 +118,50 @@ namespace SSO.Client
                 }
             }
             return false;
+        }
+
+        protected async Task ValidateSSOAsync(bool cache_flag)
+        {
+            string ticket = _request.Ticket;
+            if (_request.Query.ContainsKey(SsoParameter.TICKET))
+            {
+                ticket = _request.Query[SsoParameter.TICKET][0];
+            }
+            
+            var service = HttpUtility.UrlEncode(_request.GetURL());
+            string url = "";
+            if (cache_flag && Exist(ticket))
+            {
+                _request.CallBack.Validate?.Invoke(_options.Cookie.GetCookie(ticket));
+            }
+            else
+            {
+                var logoutUrl = _request.OriginHost;
+                if (_options.LogoutPath.Length > 0 && _options.LogoutPath[0] != '/')
+                {
+                    logoutUrl += '/';
+                }
+                logoutUrl += _options.LogoutPath;
+                var param = SsoParameter.AppID + "=" + _options.AppID
+                    + "&" + SsoParameter.TICKET + "=" + ticket
+                    + "&" + SsoParameter.LogoutPath + "=" + HttpUtility.UrlEncode(logoutUrl);
+
+                url = $"{_options.GetBaseURL(_request.OriginHost, true)}/{SsoApi.VALIDATE}?" + param;
+
+                if (!await HttpRequestAsync(url, ticket))
+                {
+
+                }
+            }
+
+            url = _request.GetURL();
+            if (_request.Query.ContainsKey(SsoParameter.TICKET))
+            {
+                var param = SsoParameter.TICKET + "=" + _request.Query[SsoParameter.TICKET][0];
+                url = url.Replace(param, "");
+                url = url.TrimEnd('&').TrimEnd('?');
+            }
+            _request.CallBack.Redirect?.Invoke(url, false, _options.Mode);
         }
 
         public abstract Task ValidateAsync(bool cache_flag);

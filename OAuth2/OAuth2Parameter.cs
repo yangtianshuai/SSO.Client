@@ -10,6 +10,8 @@
         public static string Secret { get; internal set; } = "secret";
         //authorization_code、password、refresh_token
         public static string GrantType { get; internal set; } = "grant_type";
-        
+        public static string RefreshToken { get; internal set; } = "refresh_token";
+        public static string Expire { get; internal set; } = "expires_in";
+
     }
 }

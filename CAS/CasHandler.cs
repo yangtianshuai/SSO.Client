@@ -15,7 +15,7 @@ namespace SSO.Client.CAS
         {
             if (_request.Query.ContainsKey(CasParameter.AccessToken))
             {
-                string url = _options.GetBaseURL(_request.RequestHost);
+                string url = _options.GetBaseURL(_request.OriginHost);
                 url += "/" + CasApi.LOGIN;
                 url = $"{url}?{CasParameter.SERVICE}={HttpUtility.UrlEncode(_request.GetURL())}";
                 if (!String.IsNullOrEmpty(_options.AppID))
@@ -24,14 +24,14 @@ namespace SSO.Client.CAS
                 }
                 if (_request.Query.ContainsKey(CasParameter.AccessToken))
                 {
-                    url = $"{url}&{CasParameter.AccessToken}={_request.Query[CasParameter.AccessToken]}";
+                    url = $"{url}&{CasParameter.AccessToken}={_request.Query[CasParameter.AccessToken][0]}";
                 }
 
-                _request.CallBack.Redirect?.Invoke(url, true);
+                _request.CallBack.Redirect?.Invoke(url, true, _options.Mode);
             }
             else if (!_request.Query.ContainsKey(CasParameter.TICKET))
             {               
-                string url = _options.GetBaseURL(_request.RequestHost);
+                string url = _options.GetBaseURL(_request.OriginHost);
                 if (_options.LoginURL != null && _options.LoginURL.Length > 0)
                 {
                     url = _options.LoginURL;
@@ -45,45 +45,11 @@ namespace SSO.Client.CAS
                 {
                     url = $"{url}&{CasParameter.AppID}={_options.AppID}";
                 }
-                _request.CallBack.Redirect?.Invoke(url, true);
+                _request.CallBack.Redirect?.Invoke(url, true, _options.Mode);
             }
             else
             {
-                string ticket = _request.Query[CasParameter.TICKET][0];
-                var service = HttpUtility.UrlEncode(_request.GetURL());
-                string url = "";
-                if (cache_flag && Exist(ticket))
-                {
-                    _request.CallBack.Validate?.Invoke(_options.Cookie.GetCookie(ticket));
-                }
-                else
-                {
-                    var logoutUrl = _request.RequestHost;
-                    if (_options.LogoutPath.Length > 0 && _options.LogoutPath[0] != '/')
-                    {
-                        logoutUrl += '/';
-                    }
-                    logoutUrl += _options.LogoutPath;
-                    var param = CasParameter.AppID + "=" + _options.AppID
-                        + "&" + CasParameter.TICKET + "=" + ticket
-                        + "&" + CasParameter.LogoutPath + "=" + HttpUtility.UrlEncode(logoutUrl);
-
-                    url = $"{_options.GetBaseURL(_request.RequestHost, true)}/{CasApi.VALIDATE}?" + param;
-
-                    if(!await HttpRequestAsync(url, ticket))
-                    {
-
-                    }
-                }
-
-                url = _request.GetURL();
-                if (_request.Query.ContainsKey(CasParameter.TICKET))
-                {
-                    var param = CasParameter.TICKET + "=" + _request.Query[CasParameter.TICKET][0];
-                    url = url.Replace(param, "");
-                    url = url.TrimEnd('&').TrimEnd('?');
-                }
-                _request.CallBack.Redirect?.Invoke(url, false);
+                await ValidateSSOAsync(cache_flag);
             }
         }
 

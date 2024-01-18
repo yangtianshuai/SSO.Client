@@ -102,7 +102,7 @@ namespace SSO.Client
                         {
                             cookie.ID = ticket;                            
                         }
-                        else
+                        if (res.ContainsKey("ticket"))
                         {
                             cookie.ID = res["ticket"]?.ToString();
                         }
